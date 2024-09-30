@@ -1,0 +1,26 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+# Create file .gitignore
+touch .gitignore
+
+# Add .idea to .gitignore
+echo '.idea' >> .gitignore
+
+# Remove directory from staging
+git rm -r --cached .idea
+
+# Add file to git
+git add .gitignore
+
+# Commit changes
+git commit -m "Removed .idea from git"
+
+# Push changes
+git push
