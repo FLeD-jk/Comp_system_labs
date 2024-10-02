@@ -48,5 +48,5 @@ class Processor:
         else:
             self.work_time += 1
             self.task_work_time -= 1
-            if(self.task_work_time == 0):
+            if self.task_work_time == 0:
                 self.is_free = True
