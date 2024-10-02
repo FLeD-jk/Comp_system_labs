@@ -13,25 +13,37 @@ class Controller:
         self.min_task_time = 10
         self.max_task_time = 200
         self.number_of_tasks = 10000
-        self.Probability_of_task = 45
+        self.Probability_of_task = 99
 
     def create_processors(self):
         for i in range(self.number_of_processors):
             power_of_processor = int(input(f"Enter power amount for processor with id {i}: "))
             self.processors.append(Processor(i, power_of_processor))
 
-    def generate_tasks(self):
+
+    def generate_tasks(self, excluded_processor_index):
         tasks = []
         min_processor_power = min(processor.get_power() for processor in self.processors)
         min_task_complexity = self.min_task_time * min_processor_power
         max_task_complexity = self.max_task_time * min_processor_power
-        list_of_processors = List_of_Processors()
-        size_of_list_of_processors = len(list_of_processors.get_list_processors())
+        list_of_processors = List_of_Processors().get_list_processors()
+        size_of_list_of_processors = len(list_of_processors)
 
-        for _ in range(self.number_of_tasks):
-            count_of_operations = random.randint(min_task_complexity, max_task_complexity)
-            processors = list_of_processors.get_list_processors()[random.randint(0, size_of_list_of_processors - 1)]
-            tasks.append(Task(count_of_operations, processors))
+        if excluded_processor_index:
+            filtered_processor_lists = [proc_list for proc_list in list_of_processors if
+                                    excluded_processor_index not in proc_list]
+            size_of_filtered_processors = len(filtered_processor_lists)
+            for _ in range(self.number_of_tasks):
+                count_of_operations = random.randint(min_task_complexity, max_task_complexity)
+                processors = filtered_processor_lists[random.randint(0, size_of_filtered_processors - 1)]
+                tasks.append(Task(count_of_operations, processors))
+
+        else:
+            for _ in range(self.number_of_tasks):
+                count_of_operations = random.randint(min_task_complexity, max_task_complexity)
+                processors = list_of_processors[random.randint(0, size_of_list_of_processors - 1)]
+                tasks.append(Task(count_of_operations, processors))
+
         return tasks
 
     def search_processor_for_task(self, task):
@@ -50,25 +62,32 @@ class Controller:
                 return task
         return None
 
-    def result_analyzer(self, run_time, n):
+
+
+    def result_analyzer(self, run_time, index):
         count_of_operations = 0
 
-        for i in range(n, self.number_of_processors):
-                processor = self.processors[i]
-                print(f"Processor with ID {i} worked {processor.get_work_time()} and slept {processor.get_sleep_time()}")
+        for i in range(self.number_of_processors):
+            processor = self.processors[i]
+            print(f"Processor with ID {i} worked {processor.get_work_time()} and slept {processor.get_sleep_time()}")
+
+            if i != index:
                 count_time = (10000 * processor.get_work_time()) / run_time
                 count_of_operations += int(processor.get_power() * count_time)
 
         theoretical_operations_value = sum(
-            processor.get_power() * 10000 for processor in self.processors[n:])
+            processor.get_power() * 10000 for i, processor in enumerate(self.processors) if i != index)
+
         print(f"Count of operations in 10 seconds: {count_of_operations}")
         print(f"Theoretical operations value in 10 seconds: {theoretical_operations_value}")
-        print(f"Efficiency: {count_of_operations / theoretical_operations_value * 100:.2f} %")
-
-
+        if theoretical_operations_value > 0:
+            efficiency = (count_of_operations / theoretical_operations_value) * 100
+        else:
+            efficiency = 0
+        print(f"Efficiency: {efficiency:.2f} %")
 
     def FIFO(self):
-        tasks = self.generate_tasks()
+        tasks = self.generate_tasks(None)
         run_time = 0
         for processor in self.processors:
             processor.reset_processor()
@@ -90,51 +109,64 @@ class Controller:
 
             run_time += 1
 
+
             if task_index >= len(tasks) and self.is_processor_free():
                 break
 
         self.result_analyzer(run_time, 0)
 
+    '''
+            def result_analyzer(self, run_time, n):
+        count_of_operations = 0
 
-    def Weak_processor(self):
-        tasks = self.generate_tasks()
-        run_time = 0
-        for processor in self.processors:
-            processor.reset_processor()
-
-
-        while True:
-            for i in range(1, self.number_of_processors):
+        for i in range(n, self.number_of_processors):
                 processor = self.processors[i]
-                if processor.is_free:
-                    task = self.search_task_for_processor(processor, tasks)
-                    if task is not None:
-                        processor.set_is_free(False)
-                        processor.set_task_work_time(task.get_count_of_operations() // processor.get_power())
-                        tasks.remove(task)
+                print(f"Processor with ID {i} worked {processor.get_work_time()} and slept {processor.get_sleep_time()}")
+                count_time = (10000 * processor.get_work_time()) / run_time
+                count_of_operations += int(processor.get_power() * count_time)
 
+        theoretical_operations_value = sum(
+            processor.get_power() * 10000 for processor in self.processors[n:])
+        print(f"Count of operations in 10 seconds: {count_of_operations}")
+        print(f"Theoretical operations value in 10 seconds: {theoretical_operations_value}")
+        print(f"Efficiency: {count_of_operations / theoretical_operations_value * 100:.2f} %")
+        
+        def Weak_processor(self):
+            tasks = self.generate_tasks()
+            run_time = 0
             for processor in self.processors:
-                processor.start()
-
-            run_time += 1
-
-            if task_index >= len(tasks) and self.is_processor_free():
-                break
-
-        self.result_analyzer(run_time, 1)
-
-
-
-    def strong_processor(self, work_time, plan_time):
-        tasks = self.generate_tasks()
+                processor.reset_processor()
+    
+    
+            while True:
+                for i in range(1, self.number_of_processors):
+                    processor = self.processors[i]
+                    if processor.is_free:
+                        task = self.search_task_for_processor(processor, tasks)
+                        if task is not None:
+                            processor.set_is_free(False)
+                            processor.set_task_work_time(task.get_count_of_operations() // processor.get_power())
+                            tasks.remove(task)
+    
+                for processor in self.processors:
+                    processor.start()
+    
+                run_time += 1
+    
+                if task_index >= len(tasks) and self.is_processor_free():
+                    break
+    
+            self.result_analyzer(run_time, 1)
+        
+            def strong_processor(self, work_time, plan_time):
         time_work_and_sleep = 0
         run_time = 0
         for processor in self.processors:
             processor.reset_processor()
 
-
+        task_index = 0
         while True:
-            for i in range(0, self.number_of_processors):
+            for i in range(task_index, self.number_of_processors):
                 processor = self.processors[i]
                 if processor.is_free:
                     task = self.search_task_for_processor(processor, tasks)
@@ -164,19 +196,67 @@ class Controller:
 
 
         self.result_analyzer(run_time, 0)
+    '''
 
-
-'''
-    def Weak_processor(self):
-        tasks = self.generate_tasks()
+    def strong_processor(self, work_time, plan_time):
+        strongest_processor, strongest_index = self.find_strongest_processor()
+        tasks = self.generate_tasks(strongest_index)
+        time_work_and_sleep = 0
         run_time = 0
-
         for processor in self.processors:
             processor.reset_processor()
 
 
-        weakest_processor = self.find_weakest_processor()
+        while True:
+            # Обробка завдань, пропускаючи найслабший процесор
+            for i in range(self.number_of_processors):
+                processor = self.processors[i]
+                if processor.is_free and processor != strongest_processor:
+                    task = self.search_task_for_processor(processor, tasks)
+                    if task is not None:
+                        processor.set_is_free(False)
+                        processor.set_task_work_time(task.get_count_of_operations() // processor.get_power())
+                        tasks.remove(task)
 
+            for processor in self.processors:
+                processor.start()
+
+            run_time += 1
+
+            if time_work_and_sleep <= work_time:
+                time_work_and_sleep += 1
+
+            elif time_work_and_sleep <= work_time + plan_time:
+                self.processors[strongest_index].set_is_free(False)
+                time_work_and_sleep += 1
+
+            else:
+                self.processors[strongest_index].set_is_free(True)
+
+
+            if not tasks:
+                check_free = self.is_processor_free()
+                if check_free:
+                    break
+
+        self.result_analyzer(run_time, strongest_index)
+
+    def find_strongest_processor(self):
+        strongest = self.processors[0]
+        strongest_index = 0
+        for index, processor in enumerate(self.processors):
+            if processor.get_power() > strongest.get_power():
+                strongest = processor
+                strongest_index = index
+        return strongest, strongest_index
+
+    def Weak_processor(self):
+        weakest_processor, weakest_index = self.find_weakest_processor()
+        tasks = self.generate_tasks(weakest_index)
+        run_time = 0
+
+        for processor in self.processors:
+            processor.reset_processor()
 
         while True:
             for processor in self.processors:
@@ -187,25 +267,26 @@ class Controller:
                         processor.set_task_work_time(task.get_count_of_operations() // processor.get_power())
                         tasks.remove(task)
 
-
             for processor in self.processors:
                 if processor != weakest_processor:
+                    processor.start()
 
             run_time += 1
-
 
             if not tasks:
                 check_free = self.is_processor_free()
                 if check_free:
                     break
 
-        self.result_analyzer(run_time, 0, None)
+        self.result_analyzer(run_time, weakest_index)
 
     def find_weakest_processor(self):
         weakest = self.processors[0]
-        for processor in self.processors:
+        weakest_index = 0
+        for index, processor in enumerate(self.processors):
             if processor.get_power() < weakest.get_power():
                 weakest = processor
-        return weakest
+                weakest_index = index
+        return weakest, weakest_index
 
-'''
+
