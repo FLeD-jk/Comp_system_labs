@@ -102,9 +102,9 @@ class Controller:
         for processor in self.processors:
             processor.reset_processor()
 
-        task_index = 1
+
         while True:
-            for i in range(task_index, self.number_of_processors):
+            for i in range(1, self.number_of_processors):
                 processor = self.processors[i]
                 if processor.is_free:
                     task = self.search_task_for_processor(processor, tasks)
@@ -132,9 +132,9 @@ class Controller:
         for processor in self.processors:
             processor.reset_processor()
 
-        task_index = 0
+
         while True:
-            for i in range(task_index, self.number_of_processors):
+            for i in range(0, self.number_of_processors):
                 processor = self.processors[i]
                 if processor.is_free:
                     task = self.search_task_for_processor(processor, tasks)
